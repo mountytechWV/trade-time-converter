@@ -1,5 +1,5 @@
 // Offline support: cache the app files, serve from cache, refresh in the background.
-const CACHE = "ttc-v9";
+const CACHE = "ttc-v10";
 const FILES = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
