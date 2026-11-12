@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trade Time Converter</title>
+<meta name="theme-color" content="#8f9c80">
+<meta name="description" content="Convert a student's trade screenshot time into your own time zone.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trade Time">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  @font-face{font-family:Inter;font-weight:400;font-display:swap;src:url(fonts/inter-latin-400-normal.woff2) format("woff2")}
+  @font-face{font-family:Inter;font-weight:500;font-display:swap;src:url(fonts/inter-latin-500-normal.woff2) format("woff2")}
+  @font-face{font-family:Inter;font-weight:600;font-display:swap;src:url(fonts/inter-latin-600-normal.woff2) format("woff2")}
+  @font-face{font-family:Inter;font-weight:700;font-display:swap;src:url(fonts/inter-latin-700-normal.woff2) format("woff2")}
+  @font-face{font-family:"JetBrains Mono";font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
+  @font-face{font-family:"JetBrains Mono";font-weight:700;font-display:swap;src:url(fonts/jetbrains-mono-latin-700-normal.woff2) format("woff2")}
+  :root{
+    --bg:#8f9c80; --panel:#f2efe7; --panel2:#e3ded1; --line:#d2cbbb;
+    --text:#2c3428; --muted:#6c7563; --accent:#5f8a4f; --accent-dark:#4c7440; --accent2:#8a9b78;
+    --sage:#8f9c80; --warn:#9c6f12; --bad:#b0503f;
+  }
+  *{box-sizing:border-box}
+  html{color-scheme:light}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px;line-height:1.45;padding:calc(24px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom))}
+  .wrap{max-width:820px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em;color:#fff}
+  .sub{color:#eef1e8;margin:0 0 20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;
+    box-shadow:0 2px 8px rgba(40,50,30,.12)}
+  .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:6px;display:block}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:620px){ .row{grid-template-columns:1fr} }
+  select,input[type=date],input[type=time],input[type=text]{
+    width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);
+    border-radius:9px;padding:10px 12px;font:inherit;font-size:15px}
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--accent2);outline-offset:1px;border-color:transparent}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;
+    padding:8px 12px;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+  button:hover{border-color:var(--accent2);background:#dcd6c7}
+  button.primary{background:var(--accent);border-color:var(--accent-dark);color:#fff;box-shadow:0 1px 2px rgba(60,80,40,.25)}
+  button.primary:hover{background:var(--accent-dark)}
+  .swap{display:flex;justify-content:center;margin:-4px 0 12px}
+  .swap button{background:var(--panel);box-shadow:0 1px 4px rgba(40,50,30,.15)}
+  .result{background:linear-gradient(180deg,var(--panel),#ebe7dc)}
+  .big{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:46px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#2a3326}
+  @media (max-width:620px){ .big{font-size:36px} }
+  .date{font-size:17px;margin-top:4px}
+  .zone{color:var(--muted);font-size:13px;margin-top:2px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .pill{font-size:13px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2)}
+  .pill.reg{color:var(--accent-dark);background:#dfe8d6;border-color:#b7caa6}
+  .pill.ext{color:var(--warn);background:#f1e6cc;border-color:#dcc58f}
+  .pill.closed{color:var(--bad);background:#f2dcd5;border-color:#ddb2a6}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+  .zbox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .zbox .n{font-size:12px;color:var(--muted)}
+  .zbox .t{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;font-size:17px}
+  .zbox .d{font-size:12px;color:var(--muted)}
+  .zbox.mine{border-color:var(--accent);background:#e2e9d8}
+  .zbox.theirs{border-color:var(--sage)}
+  .empty{color:var(--muted);font-size:14px}
+  .x{background:none;border:none;color:var(--muted);padding:2px 6px;font-size:16px}
+  .x:hover{color:var(--bad);background:none}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent-dark);color:#fff;
+    padding:8px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .defrow{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
+  .defrow button{padding:4px 9px;font-size:12px}
+  .srow{display:flex;gap:8px}
+  .srow select{flex:1}
+  .manage{margin-top:12px;padding:14px;border:1px dashed var(--line);border-radius:10px;background:#ebe7dd}
+  .manage[hidden]{display:none}
+  .addrow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+  @media (max-width:620px){ .addrow{grid-template-columns:1fr} }
+  .listtoggle{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;padding:6px 2px;border:none;background:none;
+    font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;text-align:left}
+  .listtoggle:hover{background:none;color:var(--accent-dark)}
+  .chev{display:inline-block;transition:transform .15s;font-size:10px}
+  .listtoggle[aria-expanded=false] .chev{transform:rotate(-90deg)}
+  .slist{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+  .slist[hidden]{display:none}
+  .sitem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:14px}
+  .sitem .z{color:var(--muted);font-size:12px}
+  textarea{width:100%;min-height:90px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px;font:12px "JetBrains Mono",ui-monospace,monospace}
+  .result{position:relative}
+  .result > .label{line-height:32px;margin-top:-7px;margin-bottom:4px;padding-right:44px}
+  .helpbtn{position:absolute;top:11px;right:14px;width:32px;height:32px;padding:0;border-radius:50%;
+    font-size:16px;font-weight:700;color:var(--accent-dark);background:var(--panel2);border:1px solid var(--line)}
+  .helpbtn:hover{background:var(--accent);color:#fff;border-color:var(--accent-dark)}
+  .modal{position:fixed;inset:0;background:rgba(35,42,30,.45);display:flex;align-items:flex-start;justify-content:center;
+    padding:calc(24px + env(safe-area-inset-top)) 14px 24px;overflow-y:auto;z-index:50}
+  .modal[hidden]{display:none}
+  .dialog{width:100%;max-width:640px;position:relative;margin:0}
+  .dialog .closex{position:absolute;top:12px;right:12px;width:32px;height:32px;padding:0;border-radius:50%;font-size:18px;line-height:1}
+  .dialog h3{font-size:16px;margin:0 0 8px}
+  .dialog .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
+  .dialog .tabs button.on{background:var(--accent);border-color:var(--accent-dark);color:#fff}
+  .dialog ol{margin:0;padding-left:20px}
+  .dialog li{margin:6px 0}
+  .dialog .tip{margin-top:12px;font-size:13px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:10px 12px}
+  .dialog section + section{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .divider{border-top:1px solid var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Trade Time Converter</h1>
+  <p class="sub">Enter the time shown on your student's screenshot, pick their time zone, and see when that trade happened for you.</p>
+
+  <div class="card">
+    <span class="label">Student</span>
+    <div class="srow">
+      <select id="student"><option value="">Choose a saved student…</option></select>
+      <button id="manageBtn" aria-expanded="false">Manage students ▾</button>
+    </div>
+    <div class="manage" id="manage" hidden>
+      <span class="label">Add a student</span>
+      <div class="addrow">
+        <input type="text" id="newName" placeholder="Student name or handle">
+        <select id="newZone"></select>
+        <button class="primary" id="addStudent">Add</button>
+      </div>
+      <button class="listtoggle" id="listToggle" aria-expanded="true"><span class="chev">▼</span><span>Saved students (<span id="scount">0</span>)</span></button>
+      <div class="slist" id="slist"></div>
+      <div class="btns">
+        <button id="exportStudents">Copy student list</button>
+        <button id="importToggle">Import student list</button>
+      </div>
+      <div id="importBox" hidden style="margin-top:10px">
+        <textarea id="importText" placeholder="Paste a student list you copied from another device"></textarea>
+        <div class="btns"><button class="primary" id="importGo">Import</button></div>
+      </div>
+      <p class="hint">Your student list is saved on this device. To move it to your phone or another computer, use "Copy student list" here and "Import student list" there.</p>
+    </div>
+    <div class="divider"></div>
+    <div class="row">
+      <div>
+        <span class="label">Student's time zone (from the screenshot)</span>
+        <select id="fromZone"></select>
+        <div class="defrow"><button id="defFrom">Set as default</button><span id="defFromLbl"></span></div>
+      </div>
+      <div>
+        <span class="label">Time on their screenshot</span>
+        <div class="row" style="gap:8px">
+          <input type="date" id="date">
+          <input type="time" id="time" step="1">
+        </div>
+      </div>
+    </div>
+    <div class="btns">
+      <button id="nowBtn">Their time right now</button>
+      <button id="todayBtn">Today</button>
+      <button id="yestBtn">Yesterday</button>
+      <button data-shift="-1">−1 hr</button>
+      <button data-shift="1">+1 hr</button>
+    </div>
+    <p class="hint">Seconds are optional. Daylight saving time is handled automatically for whatever date you pick.</p>
+  </div>
+
+  <div class="swap"><button id="swapBtn" title="Swap the two time zones">⇅ Swap zones</button></div>
+
+  <div class="card result">
+    <button class="helpbtn" id="helpBtn" aria-label="Help and install instructions" title="Help &amp; install">?</button>
+    <span class="label">That's this time in my time zone</span>
+    <select id="toZone" style="max-width:360px"></select>
+    <div class="defrow" style="margin-bottom:14px"><button id="defTo">Set as my default</button><span id="defToLbl"></span></div>
+    <div class="big" id="outTime">—</div>
+    <div class="date" id="outDate"></div>
+    <div class="zone" id="outZone"></div>
+    <div class="pills" id="pills"></div>
+    <div class="btns">
+      <button id="copyBtn">Copy result</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">Same moment in other zones</span>
+    <div class="grid" id="others"></div>
+  </div>
+
+</div>
+  <div class="modal" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="card dialog">
+      <button class="closex" id="helpClose" aria-label="Close help">×</button>
+      <section>
+        <span class="label" id="helpTitle">Help</span>
+        <h3>How to use it</h3>
+        <ol>
+          <li>Pick a saved student, or choose their time zone under <b>Student's time zone</b>.</li>
+          <li>Enter the date and time shown on their screenshot.</li>
+          <li>The big time is when that trade happened in <b>your</b> time zone, along with the market session it fell in.</li>
+        </ol>
+        <div class="tip"><b>Saving students:</b> click <b>Manage students</b>, type a name, pick their time zone, and click <b>Add</b>. Picking a student only changes the student's time zone, never yours.<br><br>
+          <b>Defaults:</b> use <b>Set as default</b> and <b>Set as my default</b> to choose which time zones the app opens with.<br><br>
+          <b>Quick buttons:</b> "Their time right now" fills in the current time for the student, and ±1 hr nudges the time. <b>Swap zones</b> flips the conversion direction.</div>
+      </section>
+      <section>
+        <span class="label">Install on your device</span>
+        <h3>Put it on your home screen or desktop</h3>
+    <div class="hint" style="margin-top:0">Installing gives you an app icon that opens full screen and works offline. It's free and takes a few seconds.</div>
+    <div class="tabs" id="installTabs">
+      <button data-os="iphone">iPhone / iPad</button>
+      <button data-os="android">Android</button>
+      <button data-os="windows">Windows</button>
+      <button data-os="mac">Mac</button>
+    </div>
+    <div data-panel="iphone">
+      <ol>
+        <li>Open this page in <b>Safari</b>.</li>
+        <li>Tap the <b>Share</b> button (the square with an arrow pointing up).</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b>. The sage clock icon appears on your home screen.</li>
+      </ol>
+    </div>
+    <div data-panel="android" hidden>
+      <ol>
+        <li>Open this page in <b>Chrome</b>.</li>
+        <li>Tap the <b>⋮</b> menu at the top right.</li>
+        <li>Tap <b>Install app</b> (or <b>Add to Home screen</b>, then <b>Install</b>).</li>
+        <li>The icon appears on your home screen and in your app drawer.</li>
+      </ol>
+    </div>
+    <div data-panel="windows" hidden>
+      <ol>
+        <li>Open this page in <b>Chrome</b> or <b>Edge</b>.</li>
+        <li>Click the <b>install icon</b> at the right end of the address bar (a small monitor with a down arrow).<br>
+          No icon? In Chrome use <b>⋮ → Cast, save, and share → Install page as app</b>. In Edge use <b>⋯ → Apps → Install this site as an app</b>.</li>
+        <li>Click <b>Install</b>. The app opens in its own window and is added to your Start menu.</li>
+        <li><b>Desktop shortcut:</b> Chrome usually adds one automatically. Edge shows a <b>Create desktop shortcut</b> checkbox right after install. If you don't see one, in Chrome type <b>chrome://apps</b> in the address bar, right-click Trade Time Converter, choose <b>Create shortcut</b>, check <b>Desktop</b>, and click <b>Create</b>.</li>
+        <li><b>Taskbar:</b> while the app is open, right-click its taskbar icon and choose <b>Pin to taskbar</b>.</li>
+      </ol>
+    </div>
+    <div data-panel="mac" hidden>
+      <ol>
+        <li><b>Chrome:</b> click the install icon at the right end of the address bar, or <b>⋮ → Cast, save, and share → Install page as app</b>.</li>
+        <li><b>Safari (macOS Sonoma or newer):</b> choose <b>File → Add to Dock</b>.</li>
+        <li>The app is added to your Applications folder and Launchpad. To keep it in the Dock, right-click its Dock icon and choose <b>Options → Keep in Dock</b>.</li>
+      </ol>
+    </div>
+    <div class="tip">After installing, open the app from its icon. Your saved students and default time zones stay on your own device. To copy your student list to another device, use <b>Manage students → Copy student list</b>, then <b>Import student list</b> on the other device.</div>
+
+      </section>
+      <div class="btns"><button class="primary" id="helpDone">Got it</button></div>
+    </div>
+  </div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const myZoneDetected = (Intl.DateTimeFormat().resolvedOptions().timeZone) || "America/New_York";
+
+  const COMMON = [
+    ["America/New_York","Eastern (ET) – New York, Florida"],
+    ["America/Chicago","Central (CT) – Chicago, Texas"],
+    ["America/Denver","Mountain (MT) – Denver"],
+    ["America/Phoenix","Arizona (no DST) – Phoenix"],
+    ["America/Los_Angeles","Pacific (PT) – California"],
+    ["America/Anchorage","Alaska (AKT)"],
+    ["Pacific/Honolulu","Hawaii (HST)"],
+    ["America/Puerto_Rico","Atlantic (AST) – Puerto Rico"],
+    ["UTC","UTC"],
+    ["Europe/London","London (UK)"],
+    ["Europe/Berlin","Central Europe – Berlin, Paris"],
+    ["Asia/Kolkata","India (IST)"],
+    ["Asia/Tokyo","Japan (JST)"],
+    ["Australia/Sydney","Sydney (AU)"]
+  ];
+  const OTHERS = ["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","UTC","Europe/London"];
+  const SHORT = {"America/New_York":"Eastern","America/Chicago":"Central","America/Denver":"Mountain",
+    "America/Los_Angeles":"Pacific","UTC":"UTC","Europe/London":"London","America/Phoenix":"Arizona"};
+
+  let allZones = [];
+  try { allZones = Intl.supportedValuesOf("timeZone"); } catch(e) {}
+
+  function fillSelect(sel, value){
+    const g1 = document.createElement("optgroup"); g1.label = "Common";
+    COMMON.forEach(([z,l]) => g1.append(new Option(l, z)));
+    sel.append(g1);
+    if (allZones.length){
+      const g2 = document.createElement("optgroup"); g2.label = "All time zones";
+      allZones.forEach(z => g2.append(new Option(z.replace(/_/g," "), z)));
+      sel.append(g2);
+    }
+    if (![...sel.options].some(o => o.value === value)) sel.append(new Option(value, value));
+    sel.value = value;
+  }
+
+  // ---- time zone math ----
+  const fmtCache = {};
+  function partsIn(ms, zone){
+    if (!fmtCache[zone]) fmtCache[zone] = new Intl.DateTimeFormat("en-US",{timeZone:zone,hourCycle:"h23",
+      year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",weekday:"short"});
+    const o = {};
+    fmtCache[zone].formatToParts(new Date(ms)).forEach(p => o[p.type] = p.value);
+    return {y:+o.year, mo:+o.month, d:+o.day, h:+o.hour % 24, mi:+o.minute, s:+o.second, wd:o.weekday};
+  }
+  function offsetMs(ms, zone){
+    const p = partsIn(ms, zone);
+    return Date.UTC(p.y, p.mo-1, p.d, p.h, p.mi, p.s) - Math.floor(ms/1000)*1000;
+  }
+  // wall-clock time in a zone -> real instant (UTC ms)
+  function wallToUtc(y, mo, d, h, mi, s, zone){
+    const guess = Date.UTC(y, mo-1, d, h, mi, s);
+    let t = guess - offsetMs(guess, zone);
+    const off2 = offsetMs(t, zone);
+    if (guess - off2 !== t) t = guess - off2;
+    return t;
+  }
+  function zoneAbbr(ms, zone){
+    try{
+      const p = new Intl.DateTimeFormat("en-US",{timeZone:zone,timeZoneName:"short"}).formatToParts(new Date(ms));
+      return (p.find(x => x.type==="timeZoneName")||{}).value || zone;
+    }catch(e){ return zone; }
+  }
+  const pad = n => String(n).padStart(2,"0");
+  function fmtTime(p, withSec){
+    const h12 = ((p.h + 11) % 12) + 1, ap = p.h < 12 ? "AM" : "PM";
+    return `${h12}:${pad(p.mi)}${withSec ? ":"+pad(p.s) : ""} ${ap}`;
+  }
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmtDate = p => `${p.wd}, ${MONTHS[p.mo-1]} ${p.d}, ${p.y}`;
+  const labelFor = z => (COMMON.find(c => c[0]===z)||[z, z.replace(/_/g," ")])[1];
+
+  // ---- state ----
+  const fromSel = $("fromZone"), toSel = $("toZone"), dateIn = $("date"), timeIn = $("time");
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem("ttc-prefs") || "{}"); } catch(e) {}
+  fillSelect(fromSel, prefs.defFrom || prefs.from || "America/Los_Angeles");
+  fillSelect(toSel, prefs.defTo || prefs.to || myZoneDetected);
+  const savePrefs = () => { try { localStorage.setItem("ttc-prefs", JSON.stringify(prefs)); } catch(e) {} };
+  function renderDefaults(){
+    $("defFromLbl").textContent = "Default: " + labelFor(prefs.defFrom || "America/Los_Angeles");
+    $("defToLbl").textContent = "Default: " + labelFor(prefs.defTo || myZoneDetected) + (prefs.defTo ? "" : " (detected)");
+  }
+
+  function setInputsFromInstant(ms){
+    const p = partsIn(ms, fromSel.value);
+    dateIn.value = `${p.y}-${pad(p.mo)}-${pad(p.d)}`;
+    timeIn.value = `${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}`;
+  }
+  function readInstant(){
+    if (!dateIn.value || !timeIn.value) return null;
+    const [y,mo,d] = dateIn.value.split("-").map(Number);
+    const tp = timeIn.value.split(":").map(Number);
+    return wallToUtc(y, mo, d, tp[0]||0, tp[1]||0, tp[2]||0, fromSel.value);
+  }
+  const hasSeconds = () => timeIn.value.split(":").length > 2 && !timeIn.value.endsWith(":00");
+
+  function sessionFor(ms){
+    const p = partsIn(ms, "America/New_York");
+    const mins = p.h*60 + p.mi;
+    if (p.wd === "Sat" || p.wd === "Sun") return ["Weekend – US market closed","closed"];
+    if (mins >= 4*60 && mins < 9*60+30) return ["Pre-market (4:00–9:30 AM ET)","ext"];
+    if (mins >= 9*60+30 && mins < 16*60) return ["Regular session (9:30 AM–4:00 PM ET)","reg"];
+    if (mins >= 16*60 && mins < 20*60) return ["After-hours (4:00–8:00 PM ET)","ext"];
+    return ["Overnight – outside extended hours","closed"];
+  }
+
+  let current = null;
+  function render(){
+    prefs.from = fromSel.value; prefs.to = toSel.value; savePrefs();
+    const ms = readInstant();
+    if (ms == null){ $("outTime").textContent = "—"; return; }
+    const sec = hasSeconds();
+    const src = partsIn(ms, fromSel.value), dst = partsIn(ms, toSel.value);
+    $("outTime").textContent = fmtTime(dst, sec);
+    $("outDate").textContent = fmtDate(dst);
+    $("outZone").textContent = `${labelFor(toSel.value)} · ${zoneAbbr(ms, toSel.value)}`;
+
+    const diffH = (offsetMs(ms, toSel.value) - offsetMs(ms, fromSel.value)) / 3600000;
+    const diffTxt = diffH === 0 ? "Same time zone offset" :
+      `You are ${Math.abs(diffH)} hr ${diffH > 0 ? "ahead of" : "behind"} them`;
+    const srcDay = Date.UTC(src.y,src.mo-1,src.d), dstDay = Date.UTC(dst.y,dst.mo-1,dst.d);
+    const dayShift = dstDay > srcDay ? "Next day for you" : dstDay < srcDay ? "Previous day for you" : null;
+    const [sess, cls] = sessionFor(ms);
+    $("pills").innerHTML = "";
+    [[diffTxt,""], ...(dayShift ? [[dayShift,"ext"]] : []), [sess, cls]].forEach(([t,c]) => {
+      const s = document.createElement("span"); s.className = "pill " + c; s.textContent = t; $("pills").append(s);
+    });
+
+    const zones = [...new Set([fromSel.value, toSel.value, ...OTHERS])];
+    $("others").innerHTML = "";
+    zones.forEach(z => {
+      const p = partsIn(ms, z);
+      const box = document.createElement("div");
+      box.className = "zbox" + (z===toSel.value ? " mine" : z===fromSel.value ? " theirs" : "");
+      const tag = z===toSel.value ? " (you)" : z===fromSel.value ? " (student)" : "";
+      box.innerHTML = `<div class="n"></div><div class="t"></div><div class="d"></div>`;
+      box.querySelector(".n").textContent = (SHORT[z] || z.split("/").pop().replace(/_/g," ")) + tag;
+      box.querySelector(".t").textContent = fmtTime(p, sec);
+      box.querySelector(".d").textContent = `${p.wd} ${MONTHS[p.mo-1]} ${p.d} · ${zoneAbbr(ms, z)}`;
+      $("others").append(box);
+    });
+
+    current = {
+      theirs: `${fmtTime(src, sec)} ${zoneAbbr(ms, fromSel.value)}, ${fmtDate(src)}`,
+      mine: `${fmtTime(dst, sec)} ${zoneAbbr(ms, toSel.value)}, ${fmtDate(dst)}`,
+      session: sess
+    };
+  }
+
+  function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
+  async function copy(text){
+    try { await navigator.clipboard.writeText(text); toast("Copied"); }
+    catch(e){ toast("Copy blocked by browser"); }
+  }
+
+  // ---- students ----
+  let students = [];
+  try { students = JSON.parse(localStorage.getItem("ttc-students") || "[]"); } catch(e) {}
+  const saveStudents = () => { try { localStorage.setItem("ttc-students", JSON.stringify(students)); } catch(e) {} };
+  const studentSel = $("student");
+  fillSelect($("newZone"), "America/Los_Angeles");
+  function renderStudents(){
+    const keep = studentSel.value;
+    studentSel.length = 1;
+    students.slice().sort((a,b) => a.name.localeCompare(b.name)).forEach(st =>
+      studentSel.append(new Option(`${st.name}  (${SHORT[st.zone] || st.zone.split("/").pop().replace(/_/g," ")})`, st.name)));
+    studentSel.value = students.some(s => s.name === keep) ? keep : "";
+    $("scount").textContent = students.length;
+    const list = $("slist"); list.innerHTML = "";
+    if (!students.length){ list.innerHTML = '<div class="empty">No students saved yet.</div>'; return; }
+    students.slice().sort((a,b) => a.name.localeCompare(b.name)).forEach(st => {
+      const row = document.createElement("div"); row.className = "sitem";
+      const info = document.createElement("div");
+      const n = document.createElement("div"); n.textContent = st.name;
+      const z = document.createElement("div"); z.className = "z"; z.textContent = labelFor(st.zone);
+      info.append(n, z);
+      const del = document.createElement("button"); del.className = "x"; del.textContent = "×"; del.title = "Remove student";
+      del.onclick = () => { students = students.filter(x => x.name !== st.name); saveStudents(); renderStudents(); };
+      row.append(info, del); list.append(row);
+    });
+  }
+  studentSel.addEventListener("change", () => {
+    const st = students.find(s => s.name === studentSel.value);
+    if (!st) return;
+    const ms = readInstant();
+    fromSel.value = st.zone;
+    if (![...fromSel.options].some(o => o.value === st.zone)) { fromSel.append(new Option(st.zone, st.zone)); fromSel.value = st.zone; }
+    render();
+  });
+  fromSel.addEventListener("change", () => {
+    const st = students.find(s => s.name === studentSel.value);
+    if (st && st.zone !== fromSel.value) studentSel.value = "";
+  });
+  $("manageBtn").onclick = () => {
+    const open = $("manage").hidden;
+    $("manage").hidden = !open;
+    $("manageBtn").textContent = open ? "Close ▴" : "Manage students ▾";
+    $("manageBtn").setAttribute("aria-expanded", open);
+    if (open) $("newName").focus();
+  };
+  function setListOpen(open){
+    $("slist").hidden = !open;
+    $("listToggle").setAttribute("aria-expanded", open);
+  }
+  setListOpen(!prefs.listCollapsed);
+  $("listToggle").onclick = () => {
+    const open = $("slist").hidden;
+    setListOpen(open); prefs.listCollapsed = !open; savePrefs();
+  };
+  function addStudent(){
+    const name = $("newName").value.trim();
+    if (!name) { $("newName").focus(); return; }
+    const existing = students.find(s => s.name.toLowerCase() === name.toLowerCase());
+    if (existing) existing.zone = $("newZone").value;
+    else students.push({name, zone: $("newZone").value});
+    saveStudents(); renderStudents();
+    $("newName").value = "";
+    toast(existing ? "Student updated" : "Student added");
+  }
+  $("addStudent").onclick = addStudent;
+  $("newName").addEventListener("keydown", e => { if (e.key === "Enter") addStudent(); });
+  $("exportStudents").onclick = () => copy(JSON.stringify(students));
+  $("importToggle").onclick = () => { $("importBox").hidden = !$("importBox").hidden; };
+  $("importGo").onclick = () => {
+    try {
+      const arr = JSON.parse($("importText").value);
+      if (!Array.isArray(arr)) throw 0;
+      let n = 0;
+      arr.forEach(x => {
+        if (!x || typeof x.name !== "string" || typeof x.zone !== "string") return;
+        const ex = students.find(s => s.name.toLowerCase() === x.name.toLowerCase());
+        if (ex) ex.zone = x.zone; else students.push({name: x.name.trim(), zone: x.zone});
+        n++;
+      });
+      saveStudents(); renderStudents();
+      $("importText").value = ""; $("importBox").hidden = true;
+      toast(`Imported ${n} student${n===1?"":"s"}`);
+    } catch(e) { toast("That doesn't look like a student list"); }
+  };
+  renderStudents();
+
+  // ---- events ----
+  [fromSel, toSel, dateIn, timeIn].forEach(el => el.addEventListener("input", render));
+  fromSel.addEventListener("change", render); toSel.addEventListener("change", render);
+  $("nowBtn").onclick = () => { setInputsFromInstant(Date.now()); render(); };
+  const setDay = offsetDays => {
+    const p = partsIn(Date.now() + offsetDays*86400000, fromSel.value);
+    dateIn.value = `${p.y}-${pad(p.mo)}-${pad(p.d)}`; if (!timeIn.value) timeIn.value = "09:30:00"; render();
+  };
+  $("todayBtn").onclick = () => setDay(0);
+  $("yestBtn").onclick = () => setDay(-1);
+  document.querySelectorAll("[data-shift]").forEach(b => b.onclick = () => {
+    const ms = readInstant(); if (ms==null) return;
+    setInputsFromInstant(ms + (+b.dataset.shift)*3600000); render();
+  });
+  $("swapBtn").onclick = () => {
+    const ms = readInstant();
+    const a = fromSel.value; fromSel.value = toSel.value; toSel.value = a;
+    if (ms != null) setInputsFromInstant(ms);
+    render();
+  };
+  $("copyBtn").onclick = () => current && copy(`Their time: ${current.theirs}\nMy time: ${current.mine}\n${current.session}`);
+
+  $("defFrom").onclick = () => { prefs.defFrom = fromSel.value; savePrefs(); renderDefaults(); toast("Student default saved"); };
+  $("defTo").onclick = () => { prefs.defTo = toSel.value; savePrefs(); renderDefaults(); toast("Your default saved"); };
+
+  // ---- install guide ----
+  function showOs(os){
+    document.querySelectorAll("#installTabs button").forEach(b => b.classList.toggle("on", b.dataset.os === os));
+    document.querySelectorAll("[data-panel]").forEach(d => d.hidden = d.dataset.panel !== os);
+  }
+  const ua = navigator.userAgent;
+  showOs(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iphone"
+       : /Android/.test(ua) ? "android" : /Macintosh/.test(ua) ? "mac" : "windows");
+  document.querySelectorAll("#installTabs button").forEach(b => b.onclick = () => showOs(b.dataset.os));
+  const openHelp = () => { $("help").hidden = false; document.body.style.overflow = "hidden"; $("helpClose").focus(); };
+  const closeHelp = () => { $("help").hidden = true; document.body.style.overflow = ""; $("helpBtn").focus(); };
+  $("helpBtn").onclick = openHelp;
+  $("helpClose").onclick = closeHelp;
+  $("helpDone").onclick = closeHelp;
+  $("help").addEventListener("click", e => { if (e.target === $("help")) closeHelp(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("help").hidden) closeHelp(); });
+
+  setInputsFromInstant(Date.now());
+  render(); renderDefaults();
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
