@@ -1,0 +1,7 @@
+{
+  "showcase": {
+    "category": "Trading Tools",
+    "order": 3,
+    "description": "Convert the time on someone's trade screenshot into your own time zone. Handles daylight saving time, shows the market session, and saves people with their time zones. Installable on iPhone, Android and desktop."
+  }
+}
